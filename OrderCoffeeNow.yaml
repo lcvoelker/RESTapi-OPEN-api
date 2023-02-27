@@ -1,0 +1,127 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: OrderCoffeeNow.com
+  description: A RESTful API for submitting coffee or food orders online. Specifically the process of submitting and receiving online orders for the shop. Has capabilites for retrieving order information, order status, order ID, delete order,and canceled orders.
+  contact:
+    name: Lara Voelker
+    email: ordercoffeenowManagement@email.com
+paths:
+  /orders:
+    get:
+      summary: Get all orders
+      parameters:
+        - name: status
+          in: query
+          description: Filter orders by status. New orders, orders in progress of being made, fulfilled orders, and cancelled orders.
+          required: false
+          schema:
+            type: string
+            enum: [new, in_progress, fulfilled, cancelled]
+      responses:
+        "200":
+          description: Order was found.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+        "404":
+          description: Order not found in system.
+    post:
+      summary: Submitting a new order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewOrder"
+      responses:
+        "201":
+          description: Order recieved. Will be processed in shop.
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+              description: URL of the newly created resource
+        "400":
+          description: Order unable to be placed at this time.
+  /orders/{id}:
+    get:
+      summary: Get an order by ID
+      parameters:
+        - name: id
+          in: path
+          description: order ID that is being retrieved
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Order ID found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          description: Order ID not found
+    delete:
+      summary: Cancel an order by ID
+      parameters:
+        - name: id
+          in: path
+          description: ID of the order being cancelled
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+        "409":
+          description: Conflict
+components:
+  schemas:
+    NewOrder:
+      type: object
+      required:
+        - customer_name
+        - items
+      properties:
+        customer_name:
+          type: string
+          description: customer name
+        items:
+          type: array
+          description: List of all items ordered
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                description: item name ex:(coffee, tea, bagel)
+              quantity:
+                type: integer
+                description: quantity of the item
+                minimum: 1
+    Order:
+      allOf:
+        - $ref: "#/components/schemas/NewOrder"
+        - type: object
+          properties:
+            id:
+              type: integer
+              description: order ID
+            status:
+              type: string
+              description: current order status
+              enum: [new, in_progress, fulfilled, cancelled]
+            created_at:
+              type: string
+              format: date-time
+              description: Timestamp when the order was submitted online
